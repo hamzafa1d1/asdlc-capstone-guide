@@ -528,6 +528,7 @@
       if (m.test.code) h += codeBlock(m.test.code);
       h += checklist(key + "/test", "Test checks", m.test.checks);
     }
+    if (arr(m.extra).length) h += ctx.heading("If you have time", "extra") + '<ul class="bullets">' + arr(m.extra).map(function (x) { return "<li>" + rich(x) + "</li>"; }).join("") + "</ul>";
     if (m.lab) h += ctx.heading("Lab", "lab") + lab(m.lab, ctx);
     if (arr(m.cc).length) {
       h += ctx.heading("Claude Code components", "claude-code") + '<div class="comp-grid compact">' + arr(m.cc).map(function (id) {
