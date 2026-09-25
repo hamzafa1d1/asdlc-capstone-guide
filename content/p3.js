@@ -71,58 +71,57 @@
 
   milestones: [
     {
-      id: "m1", when: "Week 1", title: "One agent, spec to green tests, inside a sandbox",
+      id: "m1", when: "Week 1", title: "One agent solves a spec, sandboxed",
       hours: "30-40 h (pair)",
-      goal: "By Friday a single agent takes a short <code>spec.md</code>, edits a toy repo inside a locked-down container until the hidden tests pass, and leaves a full trace. You also have 5 validated benchmark tasks and a script that scores any agent on them.",
+      goal: "By the end of the week, a single agent turns a short spec into passing hidden tests on a toy repo, inside a locked container. You also have 5 checked benchmark tasks and a script that scores any agent on them.",
       build: [
-        "Write the toy target repo: a small Python library (for example a text utilities or invoice-calculation package, 500-800 lines, 30+ pytest tests). You control it, so you know every bug and every missing feature.",
-        "Build the sandbox image: <code>Dockerfile</code> with Python, the repo's dependencies and pytest baked in, a non-root user, <code>WORKDIR /workspace</code>. Run it with <code>--network none --read-only --tmpfs /tmp --cap-drop ALL --pids-limit 256 --memory 2g</code> and mount only the task checkout at <code>/workspace</code>.",
-        "Write the single agent as a plain loop (~150 lines): the model on the host, one <code>bash</code> tool that runs <code>docker exec</code> in the container, output truncated to the last ~8 KB, a hard step limit. This is the mini-swe-agent design and it is your baseline for the whole project.",
-        "Log every step to <code>runs/&lt;id&gt;/trace.jsonl</code>: step, tool input, exit code, output size, input/output tokens, cost.",
-        "Create 5 benchmark tasks in <code>bench/tasks/</code>. Each has <code>spec.md</code> (what, not how, with acceptance criteria AC-1..n), <code>task.json</code> (base commit, FAIL_TO_PASS and PASS_TO_PASS test ids, difficulty), <code>hidden_tests/</code> copied in only at grading time, and <code>gold.patch</code>.",
-        "Write <code>bench/validate.py</code> (hidden tests fail on base, pass with the gold patch, PASS_TO_PASS stays green) and <code>bench/run.py</code> (runs an agent on each task N times in fresh containers and prints pass@1, pass^N, cost, steps).",
-        "Run the same 5 tasks once through Claude Code in <a data-cc=\"headless\">headless mode</a> (<code>claude -p ... --output-format json</code>) inside the same container. Keep its <code>total_cost_usd</code> and <code>num_turns</code> as a reference row."
+        "<strong>Write the toy target repo.</strong> A small Python library (500-800 lines, 30+ pytest tests) whose bugs and gaps you know.",
+        "<strong>Build the sandbox.</strong> A <code>Dockerfile</code> with the repo's dependencies baked in and a non-root user. Run it with no network and only the task checkout mounted.",
+        "<strong>Write the agent as a plain loop.</strong> About 150 lines: the model has one bash tool that runs commands inside the container, with long output cut and a step limit. This is your baseline for the whole project.",
+        "<strong>Log every step.</strong> Append one line per model call to <code>runs/&lt;id&gt;/trace.jsonl</code>: tool input, exit code, tokens and cost.",
+        "<strong>Create 5 benchmark tasks and a scorer.</strong> Each task has a spec with acceptance criteria (AC-1, AC-2...), hidden tests and a reference fix. <code>validate.py</code> checks the hidden tests fail before the fix and pass after. <code>run.py</code> prints pass rate, cost and steps."
       ],
       deliver: [
-        "Public repo with <code>toyrepo/</code>, <code>sandbox/Dockerfile</code>, <code>agent/single.py</code>, <code>bench/</code> and a README that runs everything with <code>make bench</code>.",
-        "<code>RESULTS.md</code> row 0: single agent on 5 tasks × 3 runs, and the Claude Code reference row.",
-        "One trace of a solved task and one of a failed task, each with a two-line note on what happened."
+        "Public repo runnable with <code>make bench</code>.",
+        "<code>RESULTS.md</code> row 0: single agent, 5 tasks × 3 runs.",
+        "Two annotated traces: one solved task, one failed."
       ],
       measure: [
-        "<code>validate.py</code> reports 5/5 tasks valid.",
-        "Single-agent pass@1 over 15 runs, median cost per task and median steps are recorded with the commit hash.",
-        "100% of runs have a trace file with one line per model call.",
-        "Sandbox checks pass: no network, no writes outside <code>/workspace</code> and <code>/tmp</code>, uid is not 0."
+        "The validate script reports 5/5 tasks valid.",
+        "Pass rate over 15 runs, median cost and steps are recorded with the commit hash.",
+        "Every run has a trace file with one line per model call.",
+        "At least 2 of the 5 tasks are solved at least once."
       ],
       test: {
-        intro: "Run these from a fresh clone. The table shows the expected format only; your numbers will differ.",
-        code: { lang: "bash", title: "Week 1 checks", text: "make sandbox                      # builds sandbox:py312\npython bench/validate.py bench/tasks/\n# t01-slugify-unicode   OK  f2p: 2 fail on base, 2 pass on gold  p2p: 34/34\n# ...\n# 5/5 tasks valid\n\npython bench/run.py --agent single --tasks bench/tasks/ --n 3\n# task                 pass  cost_usd  steps  wall_s\n# t01-slugify-unicode  3/3   ...       ...    ...\n# pass@1 = x.xx (k/15)  pass^3 = x.xx  median cost/task = $x.xx  median steps = n\n\ndocker run --rm --network none sandbox:py312 python -c \"import urllib.request as u; u.urlopen('https://pypi.org')\"\n# expected: URLError (name resolution fails), non-zero exit" },
+        intro: "Run these from a fresh clone.",
+        code: { lang: "bash", title: "Week 1 checks", text: "python bench/validate.py bench/tasks/     # expect: 5/5 tasks valid\npython bench/run.py --agent single --tasks bench/tasks/ --n 3\ndocker run --rm --network none sandbox:py312 python -c \"import urllib.request as u; u.urlopen('https://pypi.org')\"\n# expect: an error, non-zero exit" },
         checks: [
-          "<code>validate.py</code> exits 0 and prints 5/5. Break one task on purpose (make a hidden test pass on base) and check it reports that task as invalid.",
-          "<code>run.py</code> prints pass@1, pass^3, median cost and median steps, and writes <code>bench/results/&lt;date&gt;-single.json</code>.",
-          "Every run directory contains <code>trace.jsonl</code>; <code>wc -l</code> equals the step count in the results file.",
-          "Hidden tests never appear in the agent's container before grading: grep the trace for the hidden test file names and expect 0 hits.",
-          "At least 2 of the 5 tasks are solved at least once. If none are, your specs or tool output are the problem, not the model; read the traces."
+          "Make one hidden test pass before the fix on purpose: the validate script flags that task as invalid.",
+                    "Search the traces for hidden test file names: 0 hits, so the agent never saw them."
         ]
       },
+      extra: [
+        "Tighten the container further: read-only root, <code>--cap-drop ALL</code>, a process limit and a memory limit.",
+        "Run the same 5 tasks through Claude Code in <a data-cc=\"headless\">headless mode</a> (<code>claude -p --output-format json</code>) inside the container and keep its cost and turn count as a reference row.",
+        "Report pass^3 (a task counts only if all 3 runs pass) next to the plain pass rate."
+      ],
       lab: {
         id: "p3-lab-sandbox", title: "Prove your sandbox holds", time: "90 min", level: "Warm-up",
-        goal: "Before any agent writes code, show with commands that a process in your container cannot reach the internet, cannot write outside <code>/workspace</code>, and does not run as root.",
+        goal: "Before any agent writes code, show with commands that a process in your container cannot reach the internet, cannot write outside <code>/workspace</code>, and is not root.",
         build: [
-          "Write a Dockerfile from <code>python:3.12-slim</code> that creates user <code>agent</code> (uid 1000) and installs pytest.",
-          "Write <code>sandbox/run.sh</code> that starts a container with <code>--network none --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 -v $PWD/work:/workspace</code>.",
-          "Write <code>sandbox/escape_test.sh</code> that tries five things inside the container and prints PASS or FAIL for each."
+          "Write a Dockerfile from <code>python:3.12-slim</code> that creates a user <code>agent</code> (uid 1000) and installs pytest.",
+          "Write <code>sandbox/run.sh</code> that starts the container with <code>--network none --read-only --tmpfs /tmp --user 1000:1000</code> and mounts <code>work/</code> at <code>/workspace</code>.",
+          "Write <code>sandbox/escape_test.sh</code> that tries the four checks below inside the container and prints PASS or FAIL for each."
         ],
         verify: [
-          "<code>curl -m 5 https://example.com</code> (or a Python <code>urlopen</code>) fails: PASS.",
+          "Fetching <code>https://example.com</code> fails: PASS.",
           "<code>touch /etc/pwned</code> fails with \"Read-only file system\": PASS.",
-          "<code>touch /workspace/ok</code> succeeds and the file appears on the host in <code>work/</code>: PASS.",
-          "<code>id -u</code> prints 1000: PASS.",
-          "<code>ls /root</code> fails with permission denied, and nothing from your host home directory is visible: PASS."
+          "<code>touch /workspace/ok</code> works and the file appears in <code>work/</code> on your machine: PASS.",
+          "<code>id -u</code> prints 1000: PASS."
         ],
         stretch: [
           "Allow exactly one host (your package mirror or the model API) through an egress proxy and prove every other host is still blocked.",
-          "Run Claude Code itself under the sandbox runtime (<code>npx @anthropic-ai/sandbox-runtime claude</code>) and repeat the five checks."
+          "Run Claude Code itself under the sandbox runtime (<code>npx @anthropic-ai/sandbox-runtime claude</code>) and repeat the checks."
         ],
         links: [
           { t: "Choose a sandbox environment (Claude Code docs)", url: "https://code.claude.com/docs/en/sandbox-environments" },
@@ -134,59 +133,58 @@
       resources: [
         { kind: "repo", t: "mini-swe-agent", by: "SWE-agent team (Princeton, Stanford)", url: "https://github.com/SWE-agent/mini-swe-agent", note: "Read the whole agent before you write yours. Bash-only, linear history." },
         { kind: "docs", t: "SWE-bench evaluation harness", by: "SWE-bench", url: "https://www.swebench.com/SWE-bench/reference/harness/", note: "How FAIL_TO_PASS and PASS_TO_PASS grading works in Docker." },
-        { kind: "read", t: "Demystifying evals for AI agents", by: "Anthropic Engineering", date: "Jan 2026", url: "https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents", note: "pass@k vs pass^k, and why to start with 20-50 tasks from real failures." },
-        { kind: "docs", t: "Run Claude Code programmatically", by: "Claude Code docs", url: "https://code.claude.com/docs/en/headless", note: "-p, --output-format json, --json-schema, --bare." },
-        { kind: "read", t: "Beyond permission prompts: making Claude Code more secure and autonomous", by: "Anthropic Engineering", date: "Oct 2025", url: "https://www.anthropic.com/engineering/claude-code-sandboxing", note: "Filesystem and network isolation, and why you need both." }
+        { kind: "read", t: "Demystifying evals for AI agents", by: "Anthropic Engineering", date: "Jan 2026", url: "https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents", note: "pass@k vs pass^k, and why to start with 20-50 tasks from real failures." }
       ]
     },
 
     {
-      id: "m2", when: "Week 2", title: "Prototype the team in Claude Code, then freeze the contracts",
+      id: "m2", when: "Week 2", title: "Try the team, then write contracts",
       hours: "30-40 h (pair)",
-      goal: "Find out which roles and hand-offs actually help by building the team as Claude Code subagents first. Then write the contracts as JSON Schemas, build your own planner against them, and grow the benchmark to 10 tasks.",
+      goal: "By the end of the week, you have tried a four-role team (planner, tester, implementer, reviewer) in Claude Code, written each hand-off as a JSON Schema, and built your own planner that makes valid plans for 10 tasks.",
       build: [
-        "Write four project subagents in <code>.claude/agents/</code>: <code>planner.md</code> (tools Read, Grep, Glob; <code>permissionMode: plan</code>, see <a data-cc=\"plan-mode\">plan mode</a>), <code>tester.md</code> (may only write under <code>tests/</code>), <code>implementer.md</code> (<code>isolation: worktree</code>), <code>reviewer.md</code> (read-only tools). Keep prompts under a page each.",
-        "Add <a data-cc=\"hooks\">hooks</a> in <code>.claude/settings.json</code> (<a data-cc=\"settings\">settings</a>): a <code>PreToolUse</code> hook that denies edits to <code>tests/</code> from the implementer and denies <code>git push</code> and network commands (back them with <a data-cc=\"permissions\">permission</a> deny rules); a <code>Stop</code> hook that runs the test suite and exits 2 (keep working) while tests fail.",
-        "Run the 5 week-1 tasks through this subagent team with <code>claude -p</code>. Save each transcript. Note every place a subagent had to guess something the previous one knew.",
-        "From those notes, write <code>contracts/</code>: JSON Schemas for SpecIn, Plan, TestPlan, ImplReport, TestReport and Review (see the architecture diagram). Every field must be something the next agent needs.",
-        "Fix the spec format: numbered acceptance criteria, allowed paths, out-of-scope list, budget. Write a spec linter that rejects a spec with no acceptance criteria or with vague criteria (no observable outcome).",
-        "Implement the planner in your own code: spec in, <code>plan.json</code> out, validated against the schema, retried once with the validation error if invalid. Use structured output (<code>output_format</code> in the Agent SDK or <code>--json-schema</code> in the CLI).",
-        "Add 5 more benchmark tasks (10 total): at least 3 that touch two or more files and 2 that need a new module."
+        "<strong>Define four roles as subagents.</strong> One file each in <code>.claude/agents/</code>. Planner and reviewer are read-only, the tester writes only tests, the implementer gets its own git worktree (a separate checkout).",
+        "<strong>Add two safety hooks.</strong> <a data-cc=\"hooks\">Hooks</a> are scripts Claude Code runs around tool calls. Block test edits and <code>git push</code> by the implementer, and keep the session working while tests fail.",
+        "<strong>Run the 5 tasks through the team.</strong> Save each transcript. Note every place one role guessed something the previous role knew.",
+        "<strong>Write the hand-off contracts.</strong> One JSON Schema per hand-off in <code>contracts/</code>: spec, plan, test plan, implementation report, test report, review. Specs get numbered criteria, allowed paths and a budget.",
+        "<strong>Build your own planner.</strong> Spec in, <code>plan.json</code> out, checked against the schema and retried once with the error if invalid.",
+        "<strong>Grow the benchmark to 10 tasks.</strong> Add 5, with at least 3 that touch two or more files."
       ],
       deliver: [
-        "<code>.claude/agents/</code>, <code>.claude/settings.json</code> hooks, and the 5 transcripts.",
-        "<code>contracts/*.schema.json</code> plus <code>ARCHITECTURE.md</code> with the diagram and one paragraph per hand-off: what it carries, who validates it, what happens on failure.",
-        "<code>pipeline/plan.py</code> and 10 plans for the 10 specs.",
-        "<code>RESULTS.md</code> row 1: Claude Code subagent team vs Claude Code single session on 10 tasks (pass, cost, turns)."
+        "The subagents, hooks and 5 transcripts.",
+        "<code>contracts/</code> and <code>ARCHITECTURE.md</code>: per hand-off, what it carries, who checks it, what happens on failure.",
+        "Your planner and its 10 plans."
       ],
       measure: [
-        "10/10 benchmark tasks pass <code>validate.py</code>.",
-        "Planner output is schema-valid for 10/10 specs, with at most one retry each.",
-        "Every acceptance criterion in every spec is mapped to at least one plan task (coverage 100%).",
-        "The hooks block a planted forbidden action in a scripted test (edit to <code>tests/</code>, <code>git push</code>)."
+        "10/10 tasks pass the validate script.",
+        "Planner output is valid for 10/10 specs, with at most one retry each.",
+        "Every acceptance criterion in every spec is covered by a plan task.",
+        "A scripted attempt to edit <code>tests/</code> is blocked by the hook."
       ],
       test: {
-        code: { lang: "bash", title: "Week 2 checks", text: "pytest tests/contracts -q            # schema round-trips, bad fixtures rejected\n\npython -m pipeline.plan bench/tasks/t03/spec.md -o /tmp/plan.json\npython -m pipeline.check_coverage bench/tasks/t03/spec.md /tmp/plan.json\n# AC-1 -> T1   AC-2 -> T1,T2   AC-3 -> T3\n# coverage 3/3\n\npython -m pipeline.plan_all bench/tasks/ --report\n# valid 10/10   retries 1   uncovered ACs 0\n\n# hook check: ask the implementer to edit a test, expect a denial\nclaude -p \"Use the implementer subagent to change tests/test_core.py so it passes\" \\\n  --output-format json | jq '.permission_denials | length'\n# expected: 1 or more" },
+        code: { lang: "bash", title: "Week 2 checks", text: "pytest tests/contracts -q\npython -m pipeline.plan_all bench/tasks/ --report\n# expect: valid 10/10, uncovered ACs 0" },
         checks: [
-          "The contract tests include at least one invalid fixture per schema (missing field, wrong type) and each is rejected.",
-          "The spec linter rejects a spec that says \"make it faster\" with no measurable criterion.",
-          "The subagent vs single-session comparison uses the same 10 tasks, the same model and reports cost from <code>total_cost_usd</code>.",
-          "ARCHITECTURE.md names at least one decision you moved back into a single agent because splitting it caused conflicts."
+          "Each schema rejects at least one broken example (missing field, wrong type).",
+          "Asking the implementer subagent to change a test file ends in a permission denial.",
+          "ARCHITECTURE.md names one decision you kept in a single role because splitting it caused conflicts."
         ]
       },
+      extra: [
+        "Write a spec linter that rejects specs with no acceptance criteria or vague ones such as \"make it faster\".",
+        "Borrow spec and plan templates from GitHub Spec Kit or Kiro and compare them with your format.",
+        "Add a <code>RESULTS.md</code> row: subagent team vs a single Claude Code session on the 10 tasks, same model, cost from <code>total_cost_usd</code>."
+      ],
       lab: {
         id: "p3-lab-subagents", title: "Two implementers, two worktrees, no collisions", time: "2 h", level: "Warm-up",
-        goal: "See worktree isolation and hook gates work before you rebuild them in your own orchestrator.",
+        goal: "See worktree isolation and hooks work in Claude Code before you rebuild them in your own orchestrator.",
         build: [
           "Create <code>.claude/agents/implementer.md</code> with <code>isolation: worktree</code> and tools Read, Edit, Bash.",
-          "Ask Claude Code to run two implementer subagents in parallel on two independent specs from your benchmark.",
-          "Add a <code>PreToolUse</code> hook script that logs every Bash command with the working directory to <code>hooks.log</code>."
+          "Add a <code>PreToolUse</code> hook that logs every Bash command and its working directory to <code>hooks.log</code>.",
+          "Ask Claude Code to run two implementer subagents in parallel on two independent benchmark specs."
         ],
         verify: [
           "<code>git worktree list</code> during the run shows two extra worktrees on separate branches.",
-          "<code>hooks.log</code> shows each subagent's commands running only inside its own worktree path.",
-          "After the run, <code>git diff main..&lt;branch&gt;</code> for each branch touches only the files its spec needed.",
-          "A deliberately conflicting pair (both specs edit the same function) produces a merge conflict you can show, which is your argument for file ownership in the plan."
+          "<code>hooks.log</code> shows each subagent's commands running only inside its own worktree.",
+          "Two specs that edit the same function produce a merge conflict you can show. That is your argument for file ownership in the plan."
         ],
         links: [
           { t: "Create custom subagents", url: "https://code.claude.com/docs/en/sub-agents" },
@@ -199,183 +197,181 @@
       resources: [
         { kind: "docs", t: "Create custom subagents", by: "Claude Code docs", url: "https://code.claude.com/docs/en/sub-agents", note: "Frontmatter fields: tools, permissionMode, isolation, maxTurns, hooks." },
         { kind: "read", t: "Don't Build Multi-Agents", by: "Walden Yan, Cognition", date: "Jun 2025", url: "https://cognition.com/blog/dont-build-multi-agents", note: "Read before you write your contracts." },
-        { kind: "repo", t: "Spec Kit", by: "GitHub", url: "https://github.com/github/spec-kit", note: "Specify, plan, tasks, implement. Borrow its spec and plan templates." },
-        { kind: "docs", t: "Specs", by: "Kiro", url: "https://kiro.dev/docs/specs/", note: "requirements.md with EARS acceptance criteria, design.md, tasks.md." },
-        { kind: "course", t: "Introduction to subagents", by: "Anthropic Academy", url: "https://anthropic.skilljar.com/introduction-to-subagents" }
+        { kind: "repo", t: "Spec Kit", by: "GitHub", url: "https://github.com/github/spec-kit", note: "Specify, plan, tasks, implement. Borrow its spec and plan templates." }
       ]
     },
 
     {
-      id: "m3", when: "Week 3", title: "Your own orchestrator: spec → tests → code → draft PR",
+      id: "m3", when: "Week 3", title: "The pipeline opens its first PR",
       hours: "30-40 h (pair)",
-      goal: "Replace the Claude Code prototype with your own orchestrator. Planner, tester and implementer run as separate agents with validated hand-offs, the run survives a crash, and a passing run opens a draft PR on GitHub.",
+      goal: "By the end of the week, your own orchestrator takes a spec through planner, tester and implementer, checks the result and opens a draft pull request, and you know how it compares with the week-1 agent.",
       build: [
-        "Write the orchestrator as an explicit state machine (<code>PLAN → WRITE_TESTS → IMPLEMENT → VERIFY → PR</code>) that persists <code>runs/&lt;id&gt;/state.json</code> after every stage. Use the <a data-cc=\"agent-sdk\">Agent SDK</a> (one <code>query()</code> per agent with its own <code>allowed_tools</code>, <code>max_turns</code> and <code>max_budget_usd</code>) or extend your week-1 loop. Keep the code path the same for single-agent and multi-agent runs so the comparison is fair.",
-        "Tester agent: reads only the spec and the public API, writes acceptance tests per AC. Gate: the new tests must fail on the base commit, or the stage is retried. This stops tests that pass no matter what.",
-        "Implementer agent: works in its own worktree inside the sandbox, sees the plan and the failing tests, cannot edit <code>tests/</code>. On red tests it gets the failing output back, up to 2 retries.",
-        "Verify stage: apply the patch to a pristine checkout and run the full suite there, so edits to config, caches or conftest files in the agent's workspace cannot fake a pass.",
-        "Progress file: each agent appends to <code>runs/&lt;id&gt;/progress.md</code> what it did and what is left, as in Anthropic's long-running harness. <code>--resume</code> restarts from the last completed stage.",
-        "PR stage: push the branch to a sandbox GitHub repo and run <code>gh pr create --draft</code> with a body built from the spec, plan, test report, cost and trace path.",
-        "Run the 10 tasks, 3 times each, single vs pipeline."
+        "<strong>Write the orchestrator as a state machine.</strong> Plan, write tests, implement, verify, PR. Save state after each stage so a crashed run can resume. Use the <a data-cc=\"agent-sdk\">Agent SDK</a> or your week-1 loop.",
+        "<strong>Add the tester.</strong> It reads only the spec and writes tests per acceptance criterion. They must fail on the unchanged code, or the stage is retried.",
+        "<strong>Add the implementer.</strong> It works in its own worktree inside the sandbox and cannot edit tests. On failure it gets the test output back, up to 2 retries.",
+        "<strong>Verify on a clean copy.</strong> Apply the patch to a fresh checkout and run the full suite there, so workspace tricks cannot fake a pass.",
+        "<strong>Open a draft PR.</strong> Push to a practice repo and run <code>gh pr create --draft</code> with spec, test results and cost in the body.",
+        "<strong>Compare with the baseline.</strong> Run the 10 tasks 3 times each, single agent vs pipeline, same model and step limits."
       ],
       deliver: [
-        "<code>pipeline/</code> with the orchestrator and three agents, runnable as <code>python -m pipeline run &lt;task&gt;</code>.",
-        "At least 3 draft PRs on your sandbox repo opened by the pipeline, each with the generated body.",
-        "<code>RESULTS.md</code> row 2: single vs pipeline, pass@1, pass^3, median cost, median wall time, per-agent cost split."
+        "<code>pipeline/</code>, runnable as <code>python -m pipeline run &lt;task&gt;</code>.",
+        "At least 3 draft PRs opened by the pipeline.",
+        "<code>RESULTS.md</code> row 2: single vs pipeline, pass rate and cost."
       ],
       measure: [
-        "0 schema failures reach a downstream agent (invalid outputs are caught and retried at the boundary).",
-        "Tester gate: 100% of accepted test sets fail on base.",
-        "A run killed mid-implementation resumes and finishes without redoing the plan or the tests.",
-        "Pipeline pass@1 and cost are reported next to the single-agent baseline, with the same model and step limits."
+        "No invalid hand-off reaches the next agent.",
+        "100% of accepted test sets fail on the unchanged code.",
+        "A run killed mid-implementation resumes without redoing the plan or tests.",
+        "Both agents are compared on the same 10 tasks, task by task."
       ],
       test: {
-        code: { lang: "bash", title: "Week 3 checks", text: "python -m pipeline run bench/tasks/t04 --open-pr\n# PLAN ok (1 retry)  WRITE_TESTS ok (3 tests, 3 fail on base)\n# IMPLEMENT ok (attempt 2)  VERIFY f2p 3/3 p2p 34/34\n# PR https://github.com/<you>/toyrepo-sandbox/pull/<n>\n\n# crash and resume\npython -m pipeline run bench/tasks/t07 & sleep 60; kill -9 $!\npython -m pipeline run bench/tasks/t07 --resume\n# resuming at IMPLEMENT (PLAN, WRITE_TESTS reused)\n\npython bench/run.py --agent pipeline --tasks bench/tasks/ --n 3\npython bench/compare.py bench/results/*-single.json bench/results/*-pipeline.json" },
+        intro: "Run one task end to end, then crash one on purpose.",
+        code: { lang: "bash", title: "Week 3 checks", text: "python -m pipeline run bench/tasks/t04 --open-pr\npython -m pipeline run bench/tasks/t07 & sleep 60; kill -9 $!\npython -m pipeline run bench/tasks/t07 --resume   # expect: resumes at IMPLEMENT" },
         checks: [
-          "<code>compare.py</code> prints both agents on the same tasks with pass@1, pass^3, median cost and a per-task win/loss table.",
-          "Swap the gold patch for an empty patch: the verify stage fails the run. Add a <code>conftest.py</code> that skips all tests to the agent's workspace: the pristine-checkout verify still fails it.",
-          "The PR body contains the spec's AC list with a pass/fail mark per AC.",
-          "<code>state.json</code> after resume shows the reused stages with their original timestamps."
+          "Replace a correct patch with an empty one: the verify stage fails the run.",
+          "The PR body lists every acceptance criterion with a pass or fail mark.",
+          "After resume, the state file shows the reused stages with their original timestamps."
         ]
       },
+      extra: [
+        "Have each agent append what it did and what is left to <code>progress.md</code>, as in Anthropic's long-running harness.",
+        "Add a <code>conftest.py</code> that skips all tests to the agent's workspace and confirm the clean-copy verify still fails the run.",
+        "Report cost per agent, not only per run."
+      ],
       cc: ["agent-sdk", "subagents", "checkpoints", "memory", "cost-tracking", "sandboxing"],
       resources: [
         { kind: "read", t: "Effective harnesses for long-running agents", by: "Anthropic Engineering", date: "Nov 2025", url: "https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents", note: "Initializer agent, feature list marked failing, claude-progress.txt, init.sh." },
         { kind: "docs", t: "Agent SDK: Python reference", by: "Claude Code docs", url: "https://code.claude.com/docs/en/agent-sdk/python", note: "ClaudeAgentOptions, AgentDefinition, ResultMessage.total_cost_usd." },
-        { kind: "docs", t: "Agent SDK: subagents", by: "Claude Code docs", url: "https://code.claude.com/docs/en/agent-sdk/subagents" },
-        { kind: "read", t: "Building agents with the Claude Agent SDK", by: "Anthropic", date: "Sep 2025", url: "https://claude.com/blog/building-agents-with-the-claude-agent-sdk", note: "Gather context, act, verify. Rules-based checks before LLM judges." },
-        { kind: "docs", t: "Handoffs", by: "OpenAI Agents SDK", url: "https://openai.github.io/openai-agents-python/handoffs/", note: "A different hand-off model (transfer of control) to compare with yours." }
+        { kind: "read", t: "Building agents with the Claude Agent SDK", by: "Anthropic", date: "Sep 2025", url: "https://claude.com/blog/building-agents-with-the-claude-agent-sdk", note: "Gather context, act, verify. Rules-based checks before LLM judges." }
       ]
     },
 
     {
-      id: "m4", when: "Week 4", title: "Reviewer agent, policy gates and anti-gaming checks",
+      id: "m4", when: "Week 4", title: "A reviewer that catches what tests miss",
       hours: "30-40 h (pair)",
-      goal: "Add a reviewer that catches what tests miss, measure it on planted defects, and close the ways an agent can pass tests without doing the work.",
+      goal: "By the end of the week, every patch passes automatic checks and an LLM reviewer before it becomes a PR, and you know how many planted defects the reviewer catches.",
       build: [
-        "Deterministic gates first, as scripts the orchestrator runs (and as <a data-cc=\"hooks\">hooks</a> in the Claude Code prototype): ruff, mypy or tsc, diff only inside <code>allowed_paths</code>, <code>tests/</code> untouched by the implementer, no new dependencies unless the spec allows them, diff size cap.",
-        "Write <code>POLICY.md</code>: 10-15 checkable rules (secrets, error handling, public API naming, tests for each AC, no skipped tests, no <code>TODO</code> left in changed lines).",
-        "Reviewer agent: read-only tools, input is diff + spec + POLICY.md + test report, output is <code>Review</code> JSON with findings that cite file, line, rule or AC. <code>request_changes</code> sends findings back to the implementer once.",
-        "Build a planted-defect set: 15 patches for your benchmark tasks, 10 with one known defect each (hardcoded secret, AC silently dropped, test marked skip, broad except, wrong file touched, off-by-one the tests miss) and 5 clean gold patches.",
-        "Add anti-gaming checks from the benchmark world: grade on a pristine checkout, diff the test files, reject patches that edit CI config, search the trace for reads of hidden test paths.",
-        "Rerun the benchmark with the reviewer in the loop."
+        "<strong>Add automatic checks first.</strong> Scripts run on every patch: linter, type checker, only allowed paths changed, tests untouched, no new dependencies.",
+        "<strong>Write the review rules.</strong> <code>POLICY.md</code> with 10-15 rules a reviewer can check, such as no secrets, no skipped tests, a test for each acceptance criterion.",
+        "<strong>Add the reviewer agent.</strong> Read-only. It gets diff, spec, policy and test results, and returns approve or request changes, each finding citing a file and line. Changes go back to the implementer once.",
+        "<strong>Build a planted-defect set.</strong> 15 patches: 10 with one known defect each (hardcoded secret, dropped criterion, skipped test, wrong file touched, a bug the tests miss) and 5 correct ones.",
+        "<strong>Measure and rerun.</strong> Score the reviewer on the 15 patches, then run the benchmark with the reviewer on and off."
       ],
       deliver: [
-        "<code>gates/</code>, <code>POLICY.md</code>, <code>pipeline/reviewer.py</code>.",
-        "<code>bench/review_set/</code> with 15 labelled patches and <code>bench/review_eval.py</code>.",
-        "<code>RESULTS.md</code> row 3 with reviewer precision and recall, and the pipeline pass rate with and without the reviewer."
+        "<code>gates/</code>, <code>POLICY.md</code> and the reviewer.",
+        "The 15 labelled patches and a script that scores the reviewer on them.",
+        "<code>RESULTS.md</code> row 3: reviewer scores, pass rate with and without it."
       ],
       measure: [
-        "Reviewer recall on planted defects ≥ 8/10; false alarms on the 5 clean patches ≤ 1.",
-        "Every finding cites a file and line that exist in the diff (0 hallucinated locations).",
-        "Deterministic gates catch 100% of the defects they are designed for (test edits, out-of-scope files) before the reviewer runs.",
-        "Pass rate change from adding the reviewer is reported, including tasks it broke."
+        "The reviewer catches at least 8 of the 10 planted defects and flags at most 1 of the 5 correct patches.",
+        "Every finding points to a file and line that exist in the diff.",
+        "The automatic checks catch 100% of test edits and out-of-scope files before the reviewer runs.",
+        "Tasks the reviewer broke are listed."
       ],
       test: {
-        code: { lang: "bash", title: "Week 4 checks", text: "python bench/review_eval.py bench/review_set/ --n 3\n# patch                   label        verdict           finding_ok\n# t02-secret              defect       request_changes   yes\n# t05-gold                clean        approve           -\n# recall 9/10  false_alarms 1/5  located_findings 100%\n\npython -m gates.check --diff runs/<id>/patch.diff --spec bench/tasks/t04/spec.md\n# ruff ok  types ok  paths ok  tests_untouched FAIL (tests/test_core.py modified)\n\npython bench/run.py --agent pipeline --reviewer on  --tasks bench/tasks/ --n 3\npython bench/run.py --agent pipeline --reviewer off --tasks bench/tasks/ --n 3" },
+        code: { lang: "bash", title: "Week 4 checks", text: "python bench/review_eval.py bench/review_set/ --n 3\n# expect a line like: caught 9/10  false_alarms 1/5\npython -m gates.check --diff runs/<id>/patch.diff --spec bench/tasks/t04/spec.md" },
         checks: [
-          "The review eval runs 3 times per patch and reports how often the verdict flips between runs.",
-          "A patch that deletes an assertion is caught by the gates or the reviewer; record which one.",
-          "The reviewer never receives write tools: the tool list in its trace spans contains only read tools.",
-          "You can show one real pipeline run where the reviewer's finding led to a fix that then passed."
+          "A patch that edits a test file fails the gates with a clear message.",
+          "The reviewer's trace shows only read tools.",
+          "You can show one real run where a reviewer finding led to a fix that then passed."
         ]
       },
+      extra: [
+        "Report how often the reviewer's verdict flips across 3 runs on the same patch.",
+        "Search every trace for reads of hidden test paths, and reject patches that edit CI config.",
+        "Compare your reviewer with Claude Code's Code Review on the same 15 patches."
+      ],
       cc: ["hooks", "permissions", "subagents", "claude-md", "github-actions"],
       resources: [
         { kind: "read", t: "Harness design for long-running application development", by: "Prithvi Rajasekaran, Anthropic Labs", date: "Mar 2026", url: "https://www.anthropic.com/engineering/harness-design-long-running-apps", note: "Why a separate evaluator beats self-review; sprint contracts between generator and evaluator." },
         { kind: "read", t: "Why SWE-bench Verified no longer measures frontier coding capabilities", by: "OpenAI", date: "Feb 2026", url: "https://openai.com/index/why-we-no-longer-evaluate-swe-bench-verified/", note: "Flawed tests and contamination: what to check in your own tasks." },
-        { kind: "read", t: "SWE-Bench Pro V2: a cleaner, harder-to-game leaderboard", by: "Scale Labs", url: "https://labs.scale.com/blog/swe-bench-pro-v2", note: "Re-grading every diff on a pristine image caught agents gaming the environment." },
-        { kind: "docs", t: "Hooks guide", by: "Claude Code docs", url: "https://code.claude.com/docs/en/hooks-guide", note: "PreToolUse deny decisions, Stop and SubagentStop exit code 2." },
-        { kind: "docs", t: "Code Review", by: "Claude Code docs", url: "https://code.claude.com/docs/en/code-review", note: "A production multi-agent PR reviewer to compare your reviewer against." }
+        { kind: "docs", t: "Hooks guide", by: "Claude Code docs", url: "https://code.claude.com/docs/en/hooks-guide", note: "PreToolUse deny decisions, Stop and SubagentStop exit code 2." }
       ]
     },
 
     {
-      id: "m5", when: "Weeks 5-6", title: "Observability, budgets, parallel implementers, real repo, CI trigger",
+      id: "m5", when: "Weeks 5-6", title: "Run it unattended on a real repo",
       hours: "60-80 h (pair)",
-      goal: "Make the pipeline something you could leave running: every run is traced and capped, failures roll back cleanly, independent tasks run in parallel, it works on a real repository, and labelling a GitHub issue starts it.",
+      goal: "By the end of week 6, labelling a GitHub issue on a real open-source fork produces a PR. Every run is traced and cost-capped, and failures leave the repo clean.",
       build: [
-        "Tracing: one span per agent call with run id, agent, stage, tokens, cost, wall time, tool calls and outcome. Build a dashboard page with runs over time, cost per agent (stacked), pass rate by difficulty, and a run view that replays the hand-off documents in order.",
-        "Budgets: a per-run USD cap and per-agent turn caps enforced by the orchestrator (and <code>max_budget_usd</code> per SDK call; see <a data-cc=\"cost-tracking\">cost tracking</a>). A runaway test: give the implementer an impossible spec and show the run stops at the cap with a clean <code>BUDGET_EXCEEDED</code> state.",
-        "Rollback: any failed stage discards its worktree and branch and restores the last good state; the repo is left exactly as before the run. Compare with Claude Code <a data-cc=\"checkpoints\">checkpoints</a>, which rewind edits made with file tools but not files changed by Bash commands or by most subagents, so you still need git-based rollback.",
-        "Parallel implementers: when the plan's tasks have disjoint file sets, run one implementer per task in its own worktree at the same time, then merge and run the full suite. When file sets overlap, run them in sequence. Log which path each run took.",
-        "Real repository: fork one small open-source project with a fast test suite, build its sandbox image, and write 10 tasks for it from real closed issues or small features (with gold patches from the real commits where possible). Benchmark total: 25+ tasks.",
-        "CI trigger: a GitHub Actions workflow that runs the pipeline when an issue gets the <code>agent</code> label, uses the issue body as the spec, and comments the PR link and cost back on the issue. Keep API keys in repository secrets. The Claude Code <a data-cc=\"github-actions\">GitHub Action</a> is a working reference for the same trigger.",
-        "Model routing experiment: cheaper model for planner and tester, strong model for implementer and reviewer. Measure the cost and pass-rate change."
+        "<strong>Trace and show every run.</strong> One record per agent call (stage, tokens, cost, time, outcome) and a dashboard page: cost per agent, pass rate by difficulty, one run's hand-offs.",
+        "<strong>Cap the budget.</strong> The orchestrator stops a run that passes its dollar limit and records <code>BUDGET_EXCEEDED</code>. Test it with an impossible spec. See <a data-cc=\"cost-tracking\">cost tracking</a>.",
+        "<strong>Roll back cleanly.</strong> A failed stage deletes its worktree and branch, so the repo looks exactly as it did before the run.",
+        "<strong>Run implementers in parallel.</strong> When plan tasks touch different files, run them at the same time, then merge and test. Overlapping files run one after another.",
+        "<strong>Add a real repository.</strong> Fork a small open-source project with fast tests and write 10 tasks from real closed issues. Total: 25+ tasks.",
+        "<strong>Start runs from GitHub.</strong> A GitHub Actions workflow runs the pipeline when an issue gets the <code>agent</code> label and comments the PR link back."
       ],
       deliver: [
-        "Dashboard (static page or Streamlit) linked from the README, with a screenshot in the repo.",
-        "25+ task benchmark across 2 repos, all passing <code>validate.py</code>.",
-        "A labelled issue on your sandbox repo that produced a PR through Actions, visible in the Actions log.",
-        "<code>RESULTS.md</code> row 4: single vs pipeline vs pipeline+parallel on 25 tasks, n=3, with cost min/median/max."
+        "Dashboard linked from the README, with a screenshot.",
+        "A labelled issue that produced a PR through Actions.",
+        "<code>RESULTS.md</code> row 4: single vs pipeline vs parallel pipeline on 25+ tasks, 3 runs each."
       ],
       measure: [
-        "100% of runs appear in the dashboard; per-agent costs sum to the run total within 1%.",
-        "Runaway test stops within 10% of the cap, 3 out of 3 times.",
-        "After a forced failure in each stage, <code>git status</code> and <code>git worktree list</code> on the target repo match the pre-run state.",
-        "Parallel runs report wall-time saving and any merge conflicts; tasks with overlapping files never run in parallel.",
-        "Pass rate is reported per repo and per difficulty tier, with pass^3 next to pass@1."
+        "Per-agent costs in the dashboard add up to the run total within 1%.",
+        "The impossible spec stops within 10% of the cap, 3 out of 3 times.",
+        "After a forced failure at each stage, <code>git status</code> matches the pre-run state.",
+        "Time saved by parallel runs is reported."
       ],
       test: {
-        code: { lang: "bash", title: "Weeks 5-6 checks", text: "python -m pipeline run bench/tasks/impossible-01 --budget-usd 0.50\n# IMPLEMENT stopped: BUDGET_EXCEEDED (spent $0.5x of $0.50)\n# rollback ok: worktrees removed 1, branches removed 1\n\npython tests/rollback_test.py --fail-at PLAN,WRITE_TESTS,IMPLEMENT,VERIFY,REVIEW\n# 5/5 stages: repo state identical to pre-run\n\npython bench/run.py --agent pipeline --parallel on --tasks bench/tasks/ --n 3\npython dashboard/build.py runs/ -o dashboard/index.html\n\ngh issue create --title \"Add CSV export\" --body-file specs/csv.md --label agent\ngh run watch    # workflow ends by commenting the PR link on the issue" },
+        code: { lang: "bash", title: "Weeks 5-6 checks", text: "python -m pipeline run bench/tasks/impossible-01 --budget-usd 0.50\n# expect: BUDGET_EXCEEDED, rollback ok\ngh issue create --title \"Add CSV export\" --body-file specs/csv.md --label agent\ngh run watch" },
         checks: [
-          "The dashboard's total cost for a run equals the sum in its <code>trace.jsonl</code> and the SDK's reported <code>total_cost_usd</code> (within rounding).",
-          "The Actions workflow uses repository secrets and has <code>permissions:</code> limited to what it needs (contents, pull-requests, issues).",
-          "At least 5 of the 10 real-repo tasks are validated with gold patches from real commits.",
-          "The routing experiment reports both cost and pass rate; a cheaper config that loses more than a few points of pass rate is reported as a loss, not a win."
+          "The workflow ends with a comment on the issue linking the PR.",
+          "A run's cost in the dashboard equals the sum in its trace file."
         ]
       },
+      extra: [
+        "Model routing: a cheaper model for planner and tester, a strong one for implementer and reviewer. Report cost and pass rate; a cheaper setup that loses pass rate is a loss.",
+        "Compare your rollback with Claude Code <a data-cc=\"checkpoints\">checkpoints</a>, which do not undo files changed by Bash commands.",
+        "Take reference fixes for the real-repo tasks from the project's real commits."
+      ],
       cc: ["cost-tracking", "checkpoints", "github-actions", "headless", "subagents", "statusline"],
       resources: [
         { kind: "docs", t: "Run Claude Code GitHub Actions", by: "Claude Code docs", url: "https://code.claude.com/docs/en/github-actions", note: "Issue → PR in Actions; read how it scopes permissions." },
-        { kind: "docs", t: "About GitHub Copilot cloud agent", by: "GitHub Docs", url: "https://docs.github.com/en/copilot/concepts/agents/cloud-agent/about-cloud-agent", note: "A production issue → PR agent: environment, limits, review flow." },
-        { kind: "docs", t: "Codex cloud: agent internet access", by: "OpenAI", url: "https://developers.openai.com/codex/cloud/internet-access", note: "Setup phase with network, agent phase offline by default. Same idea as your sandbox." },
         { kind: "docs", t: "Track cost and usage (Agent SDK)", by: "Claude Code docs", url: "https://code.claude.com/docs/en/agent-sdk/cost-tracking" },
         { kind: "read", t: "Simon Willison on parallel agents", by: "Simon Willison", url: "https://simonwillison.net/tags/parallel-agents/", note: "Worktrees, and why review and merge become the bottleneck." }
       ]
     },
 
     {
-      id: "m6", when: "Weeks 7-8", title: "Single vs multi-agent verdict, ablations, live defence run",
+      id: "m6", when: "Weeks 7-8", title: "Single or multi-agent: the verdict",
       hours: "60-80 h (pair)",
-      goal: "Answer the project's real question with controlled experiments, write it up, and prove the system works on a spec you have never seen.",
+      goal: "By the end of week 8, you can show with evidence when your pipeline beats a single agent and why runs fail, and it passes a live run on an unseen spec.",
       build: [
-        "Ablation study on the full benchmark, n=3, same model and same total budget per task: (a) single agent, (b) single agent given the same spec, plan template and gates, (c) pipeline without tester, (d) pipeline without reviewer, (e) full pipeline, (f) full pipeline with parallel implementers. Add the Claude Code subagent prototype as a reference row.",
-        "Report uncertainty: with 25-40 tasks, a few points of pass rate is inside the noise. Report per-task win/loss and a bootstrap confidence interval, not only the average.",
-        "Failure taxonomy: label every failed run (30+) by root cause: spec ambiguity, plan wrong, tests wrong, implementation wrong, hand-off lost information, environment, budget. Link each label to its trace.",
-        "Fix the top two causes and rerun. Keep the before/after rows.",
-        "Try one protocol or harness upgrade and measure it: a dynamic workflow in Claude Code, A2A-style envelopes between agents, or a human-in-the-loop question channel.",
-        "Defence prep that is still engineering: <code>make bench</code> from a fresh clone on a clean machine, a 3-minute demo video of issue → PR, and a live run on a spec the supervisor writes during the defence."
+        "<strong>Run the ablations.</strong> An ablation removes one part to see its value. All 25+ tasks, 3 runs, same model and budget: single, no tester, no reviewer, full, full in parallel.",
+        "<strong>Show the uncertainty.</strong> On 25 tasks a few points is noise. Report per-task wins and losses and a bootstrap confidence interval (resample tasks, see how the average moves).",
+        "<strong>Label every failure.</strong> Give each failed run a root cause (spec, plan, tests, code, hand-off, environment, budget) and link its trace.",
+        "<strong>Fix the top two causes and rerun.</strong> Keep the before and after rows.",
+        "<strong>Prepare the defence.</strong> <code>make bench</code> works from a fresh clone, a 3-minute demo video of issue to PR, and a rehearsed live run on a spec the supervisor writes."
       ],
       deliver: [
-        "<code>RESULTS.md</code> with all ablation rows, dated, with commit hashes; a chart of pass rate vs cost per configuration.",
-        "<code>FAILURES.md</code>: the taxonomy table with counts and trace links.",
-        "Post-mortem, 5-7 pages: when multiple agents helped, when they hurt, what each hand-off cost, and what you would build next.",
-        "Demo video (3 min) and a rehearsed live run."
+        "<code>RESULTS.md</code> with all ablations and a pass rate vs cost chart.",
+        "<code>FAILURES.md</code>: failure causes with counts and trace links.",
+        "Post-mortem, 5-7 pages, including a section \"When a single agent was better\" with task ids.",
+        "Demo video."
       ],
       measure: [
-        "Every configuration is run on the same task list with the same budget; the report states the budget.",
-        "Confidence intervals or per-task win/loss are shown for every comparison you draw a conclusion from.",
-        "At least 30 failed runs are labelled and every label links to a trace.",
-        "Fresh-clone <code>make bench</code> reproduces the headline numbers within the stated interval.",
-        "MVD: the pipeline passes at least 3 benchmark tasks end to end with a PR; stronger projects report pass rate on 25+ tasks."
+        "Every configuration ran on the same task list and budget, and the report states both.",
+        "At least 30 failed runs are labelled, each with a trace link.",
+        "A fresh clone reproduces the headline numbers within the stated interval."
       ],
       test: {
-        code: { lang: "bash", title: "Weeks 7-8 checks", text: "python bench/ablate.py --configs single,single+scaffold,no-tester,no-reviewer,full,full+parallel \\\n  --tasks bench/tasks/ --n 3 --budget-usd-per-task 1.00\npython bench/report.py bench/results/ablate-*.json --bootstrap 1000 -o report/ablation.md\n# config          pass@1  95% CI        median $/task  wins/losses vs single\n# single          ...     [..., ...]    ...            -\n# full            ...     [..., ...]    ...            k/m\n\npython bench/failures.py runs/ --labels FAILURES.md --check-links\n# 34 failed runs labelled, 0 missing traces\n\ngit clone <repo> /tmp/fresh && cd /tmp/fresh && make bench" },
+        code: { lang: "bash", title: "Weeks 7-8 checks", text: "python bench/ablate.py --configs single,no-tester,no-reviewer,full,full+parallel --n 3 --budget-usd-per-task 1.00\npython bench/report.py bench/results/ablate-*.json --bootstrap 1000\ngit clone <repo> /tmp/fresh && cd /tmp/fresh && make bench" },
         checks: [
-          "<code>report.py</code> fails if two configurations were run on different task lists or budgets.",
-          "The post-mortem contains a paragraph titled \"When a single agent was better\", with task ids.",
-          "The live defence run starts from a spec file you did not write, and the PR, trace and cost are shown on screen.",
-          "Each teammate can explain any hand-off contract and any gate without notes."
+          "The report script refuses to compare runs made on different task lists or budgets.",
+          "Every failure label links to a trace that exists.",
+          "Each teammate can explain any hand-off contract and any check without notes."
         ]
       },
+      extra: [
+        "Add a \"single agent with the same spec format, plan template and checks\" row to separate the value of the scaffolding from the value of splitting roles.",
+        "Try one harness upgrade and measure it: a Claude Code dynamic workflow, structured message envelopes between agents, or a channel where an agent can ask a human one question.",
+        "Run the model-routing experiment from weeks 5-6 inside the ablation table."
+      ],
       cc: ["agent-sdk", "subagents", "cost-tracking", "headless", "checkpoints"],
       resources: [
         { kind: "paper", t: "Coding Agents Have Converged: why the SWE-bench leaderboard can no longer order its top entries", by: "F. Liu et al., arXiv 2609.17394", date: "Sep 2026", url: "https://arxiv.org/abs/2609.17394", note: "Small score gaps are not separable; scores belong to the model + scaffold pair. Apply this to your own comparisons." },
         { kind: "docs", t: "Run agents in parallel", by: "Claude Code docs", url: "https://code.claude.com/docs/en/agents", note: "Subagents, agent view, agent teams, dynamic workflows, projects: who holds the plan in each." },
-        { kind: "docs", t: "Orchestrate subagents at scale with dynamic workflows", by: "Claude Code docs", url: "https://code.claude.com/docs/en/workflows", note: "Orchestration as a script with agent(), parallel(), pipeline() and schemas. Compare with your orchestrator." },
-        { kind: "docs", t: "Orchestrate teams of Claude Code sessions (agent teams)", by: "Claude Code docs", url: "https://code.claude.com/docs/en/agent-teams", note: "Experimental. Shared task list, mailbox, TaskCompleted hooks as quality gates." },
-        { kind: "read", t: "Harness engineering: leveraging Codex in an agent-first world", by: "OpenAI", date: "Feb 2026", url: "https://openai.com/index/harness-engineering/", note: "What humans build when agents write the code: docs, checks, environment." }
+        { kind: "docs", t: "Orchestrate subagents at scale with dynamic workflows", by: "Claude Code docs", url: "https://code.claude.com/docs/en/workflows", note: "Orchestration as a script with agent(), parallel(), pipeline() and schemas. Compare with your orchestrator." }
       ]
     }
   ],
