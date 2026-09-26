@@ -1,0 +1,103 @@
+{
+  "ok": false,
+  "errors": [
+    "acwr: 32 km / 28.25 km 4-wk avg = ACWR 1.13 (max 1.1, i.e. <= 31.1 km)"
+  ],
+  "checks": [
+    {
+      "name": "schema",
+      "ok": true,
+      "detail": "7 days Mon-Sun, known session types, numeric km"
+    },
+    {
+      "name": "total_matches_days",
+      "ok": true,
+      "detail": "stated total_km=32, sum of days=32"
+    },
+    {
+      "name": "acwr",
+      "ok": false,
+      "detail": "32 km / 28.25 km 4-wk avg = ACWR 1.13 (max 1.1, i.e. <= 31.1 km)"
+    },
+    {
+      "name": "blocked_days_rest",
+      "ok": true,
+      "detail": "blocked days are rest"
+    },
+    {
+      "name": "days_per_week",
+      "ok": true,
+      "detail": "4 run days (Mon, Wed, Fri, Sat), limit 4"
+    },
+    {
+      "name": "injury_restrictions",
+      "ok": true,
+      "detail": "no hills/intervals during calf strain return"
+    },
+    {
+      "name": "no_back_to_back_hard",
+      "ok": true,
+      "detail": "hard sessions separated"
+    },
+    {
+      "name": "long_run_share",
+      "ok": true,
+      "detail": "longest run 10 km = 31% of week (max 35%)"
+    }
+  ],
+  "plan": {
+    "week_of": "2026-09-28",
+    "total_km": 32,
+    "days": [
+      {
+        "day": "Mon",
+        "type": "easy",
+        "km": 8,
+        "pace": "5:30/km",
+        "notes": "Easy recovery run, focus on smooth cadence to protect calf"
+      },
+      {
+        "day": "Tue",
+        "type": "rest",
+        "km": 0,
+        "pace": null,
+        "notes": "Scheduled rest day (blocked)"
+      },
+      {
+        "day": "Wed",
+        "type": "tempo",
+        "km": 8,
+        "pace": "5:10/km",
+        "notes": "Moderate tempo with 5min WU + 4km at 4:55/km + 5min CD. Avoid hard efforts given calf strain recovery"
+      },
+      {
+        "day": "Thu",
+        "type": "rest",
+        "km": 0,
+        "pace": null,
+        "notes": "Recovery between sessions"
+      },
+      {
+        "day": "Fri",
+        "type": "easy",
+        "km": 6,
+        "pace": "5:30/km",
+        "notes": "Easy run, light effort only"
+      },
+      {
+        "day": "Sat",
+        "type": "long",
+        "km": 10,
+        "pace": "5:20/km",
+        "notes": "Long run at comfortable pace, build aerobic capacity for half marathon"
+      },
+      {
+        "day": "Sun",
+        "type": "rest",
+        "km": 0,
+        "pace": null,
+        "notes": "Complete rest and recovery"
+      }
+    ]
+  }
+}

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Plan Guard Pipeline</title>
+<style>
+:root{--bg:#f7f7f4;--card:#fff;--ink:#1b1d1f;--mute:#667;--line:#e2e2dc;
+--easy:#3f8f5c;--quality:#c0622b;--long:#2f5fa8;--rest:#9a9a92;--ok:#2e7d4f;--bad:#b3261e}
+@media (prefers-color-scheme:dark){:root{--bg:#141517;--card:#1d1f22;--ink:#ececea;--mute:#9a9ca0;--line:#2e3034}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,sans-serif}
+main{max-width:980px;margin:0 auto;padding:32px 16px 64px}
+h1{margin:0 0 4px;font-size:28px}h2{font-size:17px;margin:36px 0 12px}
+.sub{color:var(--mute)}
+.flow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:20px}
+.step{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+.step b{display:block}.step small{color:var(--mute)}.arrow{color:var(--mute)}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+@media (max-width:760px){.week{grid-template-columns:repeat(2,1fr)}}
+.day{background:var(--card);border:1px solid var(--line);border-top:4px solid var(--c);border-radius:10px;padding:10px}
+.day.easy{--c:var(--easy)}.day.quality{--c:var(--quality)}.day.long{--c:var(--long)}.day.rest{--c:var(--rest);opacity:.75}
+.dn{font-weight:700}.ty{color:var(--c);text-transform:uppercase;font-size:12px;font-weight:700;letter-spacing:.04em}
+.km{font-size:24px;font-weight:700}.km span{font-size:13px;color:var(--mute)}
+.pc{font-size:13px}.nt{font-size:12px;color:var(--mute);margin-top:4px}
+.chart{position:relative;height:200px;display:flex;align-items:flex-end;gap:14px;padding:0 8px;
+border-bottom:1px solid var(--line);background:var(--card);border-radius:10px 10px 0 0}
+.bar{flex:1;background:var(--rest);border-radius:6px 6px 0 0;position:relative}.bar.plan{background:var(--long)}
+.bar b{position:absolute;top:-20px;width:100%;text-align:center;font-size:13px}
+.bar i{position:absolute;bottom:-22px;width:100%;text-align:center;font-size:12px;color:var(--mute);font-style:normal}
+.cap{position:absolute;left:0;right:0;border-top:2px dashed var(--bad);font-size:12px;color:var(--bad);padding-left:6px}
+ul.list{list-style:none;padding:0;margin:0;display:grid;gap:6px}
+ul.list li{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+ul.list li span{font-weight:700;font-size:12px;margin-right:8px}
+li.pass span,li.published span{color:var(--ok)}li.fail span,li.blocked span,li.rejected span{color:var(--bad)}
+code{font-size:13px}footer{margin-top:40px;color:var(--mute);font-size:13px}
+</style></head><body><main>
+<h1>Plan Guard Pipeline</h1>
+<div class="sub">aitrainingplan.app: an LLM drafts the week, deterministic rules decide if it ships.
+Athlete <code>sample-001</code>, half marathon in 1:45:00,
+10 weeks out, calf strain 3 weeks ago.</div>
+<div class="flow">
+<div class="step"><b>1 · Generate</b><small>Claude Haiku agent → JSON week</small></div><span class="arrow">→</span>
+<div class="step"><b>2 · Validate</b><small>Python rules → report</small></div><span class="arrow">→</span>
+<div class="step"><b>3 · Publish</b><small>only if ok → this page + plan.json</small></div>
+<span class="arrow">↺ errors fed back to step 1 (max 3 attempts)</span>
+</div>
+
+<h2>Published week of 2026-09-28 · 28 km</h2>
+<div class="week"><div class="day easy"><div class="dn">Mon</div><div class="ty">easy</div><div class="km">8<span> km</span></div><div class="pc">5:30/km</div><div class="nt">Easy recovery run, start week gently</div></div><div class="day rest"><div class="dn">Tue</div><div class="ty">rest</div><div class="km">0<span> km</span></div><div class="pc"></div><div class="nt">Rest day (blocked)</div></div><div class="day quality"><div class="dn">Wed</div><div class="ty">tempo</div><div class="km">7<span> km</span></div><div class="pc">4:55/km</div><div class="nt">Tempo run at threshold pace. Warm up 2km easy, 3km at threshold, cool down 2km easy. Avoids intervals due to calf strain.</div></div><div class="day easy"><div class="dn">Thu</div><div class="ty">easy</div><div class="km">6<span> km</span></div><div class="pc">5:30/km</div><div class="nt">Easy recovery run, keep effort low</div></div><div class="day rest"><div class="dn">Fri</div><div class="ty">rest</div><div class="km">0<span> km</span></div><div class="pc"></div><div class="nt">Rest day for recovery before long run</div></div><div class="day long"><div class="dn">Sat</div><div class="ty">long</div><div class="km">7<span> km</span></div><div class="pc">5:30/km</div><div class="nt">Long run at easy pace. No hills due to ongoing calf strain recovery.</div></div><div class="day rest"><div class="dn">Sun</div><div class="ty">rest</div><div class="km">0<span> km</span></div><div class="pc"></div><div class="nt">Rest and recovery</div></div></div>
+
+<h2>Load: last 4 weeks vs planned (ACWR cap 1.10 = 31.1 km)</h2>
+<div class="chart"><div class="bar" style="height:72.8%"><b>26</b><i>wk -4</i></div><div class="bar" style="height:78.4%"><b>28</b><i>wk -3</i></div><div class="bar" style="height:83.9%"><b>30</b><i>wk -2</i></div><div class="bar" style="height:81.2%"><b>29</b><i>wk -1</i></div><div class="bar plan" style="height:78.4%"><b>28</b><i>planned</i></div><div class="cap" style="bottom:87.0%">cap 31.1 km</div></div>
+<div style="height:28px"></div>
+
+<h2>Validator report</h2>
+<ul class="list"><li class="pass"><span>PASS</span><code>schema</code> 7 days Mon-Sun, known session types, numeric km</li><li class="pass"><span>PASS</span><code>total_matches_days</code> stated total_km=28, sum of days=28</li><li class="pass"><span>PASS</span><code>acwr</code> 28 km / 28.25 km 4-wk avg = ACWR 0.99 (max 1.1, i.e. &lt;= 31.1 km)</li><li class="pass"><span>PASS</span><code>blocked_days_rest</code> blocked days are rest</li><li class="pass"><span>PASS</span><code>days_per_week</code> 4 run days (Mon, Wed, Thu, Sat), limit 4</li><li class="pass"><span>PASS</span><code>injury_restrictions</code> no hills/intervals during calf strain return</li><li class="pass"><span>PASS</span><code>no_back_to_back_hard</code> hard sessions separated</li><li class="pass"><span>PASS</span><code>long_run_share</code> longest run 8 km = 29% of week (max 35%)</li></ul>
+
+<h2>Run log (2026-09-26-a)</h2>
+<ul class="list"><li class="rejected"><span>REJECTED</span> attempt 1: acwr: 32 km / 28.25 km 4-wk avg = ACWR 1.13 (max 1.1, i.e. &lt;= 31.1 km)</li><li class="rejected"><span>REJECTED</span> attempt 2: days_per_week: 5 run days (Mon, Wed, Thu, Sat, Sun), limit 4; no_back_to_back_hard: back-to-back hard days: Sat-Sun</li><li class="published"><span>PUBLISHED</span> attempt 3: all checks passed</li></ul>
+
+<footer>Generated by <code>pipeline/publisher.py</code>. Machine-readable output: <a href="plan.json">plan.json</a>.</footer>
+</main></body></html>
