@@ -2,56 +2,56 @@
   "athlete_id": "sample-001",
   "plan": {
     "week_of": "2026-09-28",
-    "total_km": 28,
+    "total_km": 30,
     "days": [
       {
         "day": "Mon",
         "type": "easy",
         "km": 8,
-        "pace": "5:30/km",
-        "notes": "Easy recovery run, start week gently"
+        "pace": "5:50/km",
+        "notes": "Recovery run; build weekly volume"
       },
       {
         "day": "Tue",
         "type": "rest",
         "km": 0,
         "pace": null,
-        "notes": "Rest day (blocked)"
+        "notes": "Blocked day; full recovery"
       },
       {
         "day": "Wed",
         "type": "tempo",
         "km": 7,
         "pace": "4:55/km",
-        "notes": "Tempo run at threshold pace. Warm up 2km easy, 3km at threshold, cool down 2km easy. Avoids intervals due to calf strain."
+        "notes": "Threshold work to build fitness; monitor calf carefully"
       },
       {
         "day": "Thu",
-        "type": "easy",
-        "km": 6,
-        "pace": "5:30/km",
-        "notes": "Easy recovery run, keep effort low"
-      },
-      {
-        "day": "Fri",
         "type": "rest",
         "km": 0,
         "pace": null,
-        "notes": "Rest day for recovery before long run"
+        "notes": "Recovery day"
+      },
+      {
+        "day": "Fri",
+        "type": "easy",
+        "km": 5,
+        "pace": "5:50/km",
+        "notes": "Light maintenance run; prepare for long run"
       },
       {
         "day": "Sat",
         "type": "long",
-        "km": 7,
-        "pace": "5:30/km",
-        "notes": "Long run at easy pace. No hills due to ongoing calf strain recovery."
+        "km": 10,
+        "pace": "5:55/km",
+        "notes": "Aerobic endurance run at easy pace; longest run of week"
       },
       {
         "day": "Sun",
         "type": "rest",
         "km": 0,
         "pace": null,
-        "notes": "Rest and recovery"
+        "notes": "Recovery; prepare for next week"
       }
     ]
   },
@@ -64,12 +64,12 @@
     {
       "name": "total_matches_days",
       "ok": true,
-      "detail": "stated total_km=28, sum of days=28"
+      "detail": "stated total_km=30, sum of days=30"
     },
     {
       "name": "acwr",
       "ok": true,
-      "detail": "28 km / 28.25 km 4-wk avg = ACWR 0.99 (max 1.1, i.e. <= 31.1 km)"
+      "detail": "30 km / 28.25 km 4-wk avg = ACWR 1.06 (max 1.1, i.e. <= 31.1 km)"
     },
     {
       "name": "blocked_days_rest",
@@ -79,7 +79,7 @@
     {
       "name": "days_per_week",
       "ok": true,
-      "detail": "4 run days (Mon, Wed, Thu, Sat), limit 4"
+      "detail": "4 run days (Mon, Wed, Fri, Sat), limit 4"
     },
     {
       "name": "injury_restrictions",
@@ -92,9 +92,14 @@
       "detail": "hard sessions separated"
     },
     {
+      "name": "long_run_is_longest",
+      "ok": true,
+      "detail": "long run is the longest session"
+    },
+    {
       "name": "long_run_share",
       "ok": true,
-      "detail": "longest run 8 km = 29% of week (max 35%)"
+      "detail": "longest run 10 km = 33% of week (max 35%)"
     }
   ]
 }

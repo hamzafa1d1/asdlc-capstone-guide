@@ -1,0 +1,10 @@
+{
+  "run_id": "2026-09-26-c",
+  "attempts": [
+    {
+      "attempt": 1,
+      "status": "published",
+      "summary": "all checks passed"
+    }
+  ]
+}

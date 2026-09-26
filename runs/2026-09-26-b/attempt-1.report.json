@@ -1,0 +1,106 @@
+{
+  "ok": true,
+  "errors": [],
+  "checks": [
+    {
+      "name": "schema",
+      "ok": true,
+      "detail": "7 days Mon-Sun, known session types, numeric km"
+    },
+    {
+      "name": "total_matches_days",
+      "ok": true,
+      "detail": "stated total_km=30, sum of days=30"
+    },
+    {
+      "name": "acwr",
+      "ok": true,
+      "detail": "30 km / 28.25 km 4-wk avg = ACWR 1.06 (max 1.1, i.e. <= 31.1 km)"
+    },
+    {
+      "name": "blocked_days_rest",
+      "ok": true,
+      "detail": "blocked days are rest"
+    },
+    {
+      "name": "days_per_week",
+      "ok": true,
+      "detail": "4 run days (Mon, Wed, Thu, Sat), limit 4"
+    },
+    {
+      "name": "injury_restrictions",
+      "ok": true,
+      "detail": "no hills/intervals during calf strain return"
+    },
+    {
+      "name": "no_back_to_back_hard",
+      "ok": true,
+      "detail": "hard sessions separated"
+    },
+    {
+      "name": "long_run_is_longest",
+      "ok": true,
+      "detail": "long run is the longest session"
+    },
+    {
+      "name": "long_run_share",
+      "ok": true,
+      "detail": "longest run 10 km = 33% of week (max 35%)"
+    }
+  ],
+  "plan": {
+    "week_of": "2026-09-28",
+    "total_km": 30,
+    "days": [
+      {
+        "day": "Mon",
+        "type": "easy",
+        "km": 7,
+        "pace": "5:20/km",
+        "notes": "Easy recovery run"
+      },
+      {
+        "day": "Tue",
+        "type": "rest",
+        "km": 0,
+        "pace": null,
+        "notes": ""
+      },
+      {
+        "day": "Wed",
+        "type": "tempo",
+        "km": 8,
+        "pace": "4:55/km",
+        "notes": "Threshold pace work, manageable for calf strain recovery"
+      },
+      {
+        "day": "Thu",
+        "type": "easy",
+        "km": 5,
+        "pace": "5:20/km",
+        "notes": "Easy recovery, low impact"
+      },
+      {
+        "day": "Fri",
+        "type": "rest",
+        "km": 0,
+        "pace": null,
+        "notes": ""
+      },
+      {
+        "day": "Sat",
+        "type": "long",
+        "km": 10,
+        "pace": "5:20/km",
+        "notes": "Long run at comfortable easy pace"
+      },
+      {
+        "day": "Sun",
+        "type": "rest",
+        "km": 0,
+        "pace": null,
+        "notes": ""
+      }
+    ]
+  }
+}

@@ -1,0 +1,53 @@
+You are a running coach for aitrainingplan.app.
+Draft next week's training for this athlete.
+
+ATHLETE PROFILE (JSON):
+{
+  "athlete_id": "sample-001",
+  "goal": {
+    "event": "half marathon",
+    "target_time": "1:45:00",
+    "weeks_out": 10
+  },
+  "recent_weeks_km": [
+    26,
+    28,
+    30,
+    29
+  ],
+  "days_per_week": 4,
+  "blocked_days": [
+    "Tue"
+  ],
+  "threshold_pace_per_km": "4:55",
+  "injury": {
+    "type": "calf strain",
+    "weeks_ago": 3,
+    "avoid_session_types": [
+      "hills",
+      "intervals"
+    ]
+  }
+}
+
+Plan the week starting 2026-09-28.
+
+HARD RULES (a validator rejects the week if any is broken):
+- total weekly km <= 31.1 (ACWR 1.1 against the 4-week average)
+- at most 4 run days; all other days are rest with 0 km
+- Tue blocked day(s) must be rest
+- no session of type hills, intervals
+- no two hard days in a row (hard = hills, intervals, long, tempo)
+- the long run is the single longest run of the week
+- the long run is <= 35% of weekly km
+- total_km equals the sum of the days' km
+
+Return ONLY raw JSON matching this schema. No markdown, no code fences, no commentary.
+{
+  "week_of": "YYYY-MM-DD (a Monday)",
+  "total_km": number,
+  "days": [
+    {"day": "Mon", "type": "rest|easy|tempo|intervals|hills|long", "km": number, "pace": "m:ss/km or null", "notes": "string"}
+    ... exactly 7 entries, Mon to Sun in order
+  ]
+}
