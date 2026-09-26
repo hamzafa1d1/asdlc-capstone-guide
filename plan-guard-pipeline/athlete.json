@@ -1,0 +1,17 @@
+{
+  "athlete_id": "sample-001",
+  "goal": {
+    "event": "half marathon",
+    "target_time": "1:45:00",
+    "weeks_out": 10
+  },
+  "recent_weeks_km": [26, 28, 30, 29],
+  "days_per_week": 4,
+  "blocked_days": ["Tue"],
+  "threshold_pace_per_km": "4:55",
+  "injury": {
+    "type": "calf strain",
+    "weeks_ago": 3,
+    "avoid_session_types": ["hills", "intervals"]
+  }
+}

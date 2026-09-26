@@ -1,0 +1,13 @@
+{
+  "week_of": "2026-09-28",
+  "total_km": 30,
+  "days": [
+    {"day": "Mon", "type": "easy", "km": 7, "pace": "5:45/km", "notes": "Easy recovery run"},
+    {"day": "Tue", "type": "rest", "km": 0, "pace": null, "notes": "Scheduled rest day (blocked)"},
+    {"day": "Wed", "type": "easy", "km": 6, "pace": "5:45/km", "notes": "Easy run, monitor calf"},
+    {"day": "Thu", "type": "easy", "km": 6, "pace": "5:45/km", "notes": "Easy run, base building"},
+    {"day": "Fri", "type": "rest", "km": 0, "pace": null, "notes": "Rest day"},
+    {"day": "Sat", "type": "tempo", "km": 5, "pace": "4:55/km", "notes": "Threshold work, cautious with injury"},
+    {"day": "Sun", "type": "long", "km": 6, "pace": "5:45/km", "notes": "Long run at easy pace"}
+  ]
+}

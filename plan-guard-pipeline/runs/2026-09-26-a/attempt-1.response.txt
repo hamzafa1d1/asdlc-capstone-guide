@@ -1,0 +1,13 @@
+{
+  "week_of": "2026-09-28",
+  "total_km": 32,
+  "days": [
+    {"day": "Mon", "type": "easy", "km": 8, "pace": "5:30/km", "notes": "Easy recovery run, focus on smooth cadence to protect calf"},
+    {"day": "Tue", "type": "rest", "km": 0, "pace": null, "notes": "Scheduled rest day (blocked)"},
+    {"day": "Wed", "type": "tempo", "km": 8, "pace": "5:10/km", "notes": "Moderate tempo with 5min WU + 4km at 4:55/km + 5min CD. Avoid hard efforts given calf strain recovery"},
+    {"day": "Thu", "type": "rest", "km": 0, "pace": null, "notes": "Recovery between sessions"},
+    {"day": "Fri", "type": "easy", "km": 6, "pace": "5:30/km", "notes": "Easy run, light effort only"},
+    {"day": "Sat", "type": "long", "km": 10, "pace": "5:20/km", "notes": "Long run at comfortable pace, build aerobic capacity for half marathon"},
+    {"day": "Sun", "type": "rest", "km": 0, "pace": null, "notes": "Complete rest and recovery"}
+  ]
+}

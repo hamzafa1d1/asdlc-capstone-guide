@@ -1,0 +1,20 @@
+{
+  "run_id": "2026-09-26-a",
+  "attempts": [
+    {
+      "attempt": 1,
+      "status": "rejected",
+      "summary": "acwr: 32 km / 28.25 km 4-wk avg = ACWR 1.13 (max 1.1, i.e. <= 31.1 km)"
+    },
+    {
+      "attempt": 2,
+      "status": "rejected",
+      "summary": "days_per_week: 5 run days (Mon, Wed, Thu, Sat, Sun), limit 4; no_back_to_back_hard: back-to-back hard days: Sat-Sun"
+    },
+    {
+      "attempt": 3,
+      "status": "published",
+      "summary": "all checks passed"
+    }
+  ]
+}
