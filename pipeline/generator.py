@@ -28,7 +28,7 @@ SCHEMA = """{
 }"""
 
 
-def build_prompt(athlete, week_of, feedback=None):
+def build_prompt(athlete, week_of, feedback=None, previous=None, rules=()):
     prompt = f"""You are a running coach for aitrainingplan.app.
 Draft next week's training for this athlete.
 
@@ -37,15 +37,21 @@ ATHLETE PROFILE (JSON):
 
 Plan the week starting {week_of}.
 
+HARD RULES (a validator rejects the week if any is broken):
+{chr(10).join(f"- {r}" for r in rules)}
+
 Return ONLY raw JSON matching this schema. No markdown, no code fences, no commentary.
 {SCHEMA}
 """
     if feedback:
         prompt += (
-            "\nYOUR PREVIOUS DRAFT WAS REJECTED BY THE VALIDATOR. Fix every error below "
-            "and return the full corrected week as raw JSON only:\n"
+            "\nYOUR PREVIOUS DRAFT WAS REJECTED BY THE VALIDATOR.\n"
+            f"Previous draft:\n{previous}\n"
+            "Errors:\n"
             + "\n".join(f"- {e}" for e in feedback)
-            + "\n"
+            + "\nEdit the previous draft: fix these errors, keep every HARD RULE above "
+            "satisfied, and change as little else as possible. "
+            "Return the full corrected week as raw JSON only.\n"
         )
     return prompt
 

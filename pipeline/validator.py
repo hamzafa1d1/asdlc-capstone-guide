@@ -16,6 +16,26 @@ ACWR_MAX = 1.10
 LONG_RUN_MAX_SHARE = 0.35
 
 
+def rules_for_prompt(athlete):
+    """The same hard rules validate() enforces, as text for the generator prompt.
+
+    Built from the same constants so the prompt and the validator can't drift.
+    """
+    recent = athlete["recent_weeks_km"]
+    cap = sum(recent) / len(recent) * ACWR_MAX
+    avoid = athlete.get("injury", {}).get("avoid_session_types", [])
+    return [
+        f"total weekly km <= {cap:.1f} (ACWR {ACWR_MAX} against the 4-week average)",
+        f"at most {athlete['days_per_week']} run days; all other days are rest with 0 km",
+        f"{', '.join(athlete.get('blocked_days', [])) or 'no'} blocked day(s) must be rest",
+        f"no session of type {', '.join(avoid)}" if avoid else "no injury restrictions",
+        f"no two hard days in a row (hard = {', '.join(sorted(HARD))})",
+        "the long run is the single longest run of the week",
+        f"the long run is <= {LONG_RUN_MAX_SHARE:.0%} of weekly km",
+        "total_km equals the sum of the days' km",
+    ]
+
+
 def parse(raw):
     return json.loads(raw)
 
@@ -88,7 +108,16 @@ def validate(raw, athlete):
     check("no_back_to_back_hard", not pairs,
           "hard sessions separated" if not pairs else f"back-to-back hard days: {', '.join(pairs)}")
 
-    # 8. long run share
+    # 8. the long run is actually the longest run
+    long_days = [d for d in days if d["type"] == "long"]
+    others = max((d["km"] for d in days if d["type"] != "long"), default=0)
+    long_ok = len(long_days) <= 1 and all(d["km"] > others for d in long_days)
+    check("long_run_is_longest", long_ok,
+          "long run is the longest session" if long_ok else
+          "long run (" + ", ".join(f"{d['day']} {d['km']:g} km" for d in long_days) + ") "
+          f"must be longer than every other run (max other {others:g} km) and appear once")
+
+    # 9. long run share
     longest = max(d["km"] for d in days)
     share = longest / week_km if week_km else 0
     check("long_run_share", share <= LONG_RUN_MAX_SHARE + 1e-9,

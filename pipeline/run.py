@@ -30,9 +30,10 @@ def main(argv=None):
     run_dir.mkdir(parents=True, exist_ok=True)
     log = {"run_id": args.run_id, "attempts": []}
 
-    feedback = None
+    feedback = previous = None
+    rules = validator.rules_for_prompt(athlete)
     for attempt in range(1, MAX_ATTEMPTS + 1):
-        prompt = generator.build_prompt(athlete, args.week_of, feedback)
+        prompt = generator.build_prompt(athlete, args.week_of, feedback, previous, rules)
         try:
             raw = generator.generate(prompt, args.backend, run_dir, attempt)
         except generator.WaitingForAgent as w:
@@ -56,7 +57,7 @@ def main(argv=None):
             print(f"    - {err}")
         log["attempts"].append({"attempt": attempt, "status": "rejected",
                                 "summary": "; ".join(report["errors"])})
-        feedback = report["errors"]
+        feedback, previous = report["errors"], raw.strip()
 
     (run_dir / "log.json").write_text(json.dumps(log, indent=2) + "\n")
     print(f"[pipeline] blocked after {MAX_ATTEMPTS} attempts, nothing published")
