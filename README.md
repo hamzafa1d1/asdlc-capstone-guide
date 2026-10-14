@@ -55,3 +55,13 @@ Preview locally with `python3 -m http.server` in the repo and open http://localh
 ## Progress
 
 Checkboxes, lab verifications and "milestone done" marks are saved in each student's browser only (localStorage). Nothing is sent anywhere.
+
+## Running and maintaining the guide
+
+Serve the static files locally:
+
+```sh
+python3 -m http.server 5173
+```
+
+Open http://localhost:5173. The guide is HTML, CSS and JavaScript with no package installation required. Treat project milestones as teaching guidance; verify current course scope against the official document linked above.
